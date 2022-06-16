@@ -19,10 +19,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
-
 // the UI that the user gets when opens localhost:3000/
 app.get("/" , function(req,res){
-    res.sendFile(__dirname + "/index.html")
+    res.render("index.ejs", {
+      cluster: "xy",
+      lag : "xy",
+      node1 : "xy",
+      node2 : "xy",
+      node3 : "xy",
+      slaves : "xy",
+    })
 });
 
 
@@ -35,6 +41,8 @@ app.post('/', async (req, res) => {
       node_name = req.body.node
       cluster_name = req.body.cluster_name
       console.log(node_name, cluster_name)
+
+      var region = node_name.split(".")[2]
 
 
       if (ValidateNodeName(node_name)){
@@ -79,6 +87,7 @@ app.post('/', async (req, res) => {
         }
 
         else{
+         
 
   // variable to store all the IPs+port of the nodes in the cluster
         split_ip = result2[0].Value.split(",")
@@ -88,9 +97,54 @@ app.post('/', async (req, res) => {
         split_ip.forEach(element => {
           ips.push(element.split(":")[0])
         });
-        // console.log(split_ip);
+        var all_nodes = []
 
-// testing the connections in a loop
+
+// connecting to  praveen DB in stg-manasareddy002
+
+        const poolo = mariadb.createPool({
+          host: "stg-manasareddy002.phonepe.nb6",
+          user: 'praveen',
+          password: 'password',
+          port: 3306, 
+          database: "praveen"
+        });
+
+
+
+        // Expose a method to establish connection with MariaDB SkySQL
+          module.exports = Object.freeze({
+            poolo: poolo
+          });
+
+        // here we find no of rows in all_nodes table.. this will reflect how many comparisons (of the node_name) need to be made..
+          var rowsnum = await poolo.query("SELECT count(*) as NUM from all_nodes")
+          rowsnum = rowsnum[0].NUM
+
+          // finding list of all the nodes in all the clusters that have been onboarded already
+          const resu = await poolo.query("select all_nodes from all_nodes" )
+          var flag = 0
+
+          //  comparing each node already inside the cluster with node_name, to find if the cluster containing the node_name has already been onboarded 
+          for(let i= 0; i< rowsnum; i++){
+            if (node_name == resu[i].all_nodes){
+              flag +=1
+            }
+          }
+
+          // this if_else is used to either onboard the cluster or give a msg that a cluster has alreadty been onboarded
+          if(flag >0){
+            alert("The cluster has already been onboarded on the dashboard.")
+          }
+          else{
+          const resultm = await poolo.query("insert into clusters (nodes) values (?)", node_name );
+          }
+
+
+          
+
+
+// connecting to all nodes in cluster, in a loop, to find theri node names and push it into all_nodes table
 
         active_nodes = ips.length;
         hostnames = []
@@ -116,90 +170,10 @@ app.post('/', async (req, res) => {
       // finding node name of the given node
             const resultm = await poolm.query("select @@hostname");
             hostnames[i] = Object.values(resultm[0])
-        }
+            const insert_nodes = await poolo.query("insert into all_nodes (all_nodes) values (?)", (hostnames[i] + ".phonepe." + region) );        // in this line we push values into all_nodes table
+          }
 
         console.log(hostnames);
-
-// connecting to node1 to find its  node-name
-      // Create a connection pool
-      //     const poolm = mariadb.createPool({
-      //       host: ips[0],
-      //       user: 'praveen',
-      //       password: 'password',
-      //       port: 3306, 
-      //     });
-    
-    
-    
-      // // Expose a method to establish connection with MariaDB SkySQL
-      //       module.exports = Object.freeze({
-      //         poolm: poolm
-      //       });
-    
-    
-      // // finding node name of the given node
-      //       const resultm = await poolm.query("select @@hostname");
-      //       added = "the nodes of the cluster are:" + "\n" + resultm[0].Value + " : " + ips[0] + "\n"
-      //       // res.render("dashboard" , {node1 : node1})
-      //       node1 = Object.values(resultm[0])
-      //       ip1 = ips[0]
-
-
-
-// connecting to node2 to find its logical  node-name
-      // Create a connection pool
-      //     const pooln = mariadb.createPool({
-      //       host: ips[1],
-      //       user: 'praveen',
-      //       password: 'password',
-      //       port: 3306, 
-      //     });
-
-
-
-      // // Expose a method to establish connection with MariaDB SkySQL
-      //       module.exports = Object.freeze({
-      //         pooln: pooln
-      //       });
-
-
-      // // finding node name of the 3rd node
-      //       const resultn = await pooln.query("select @@hostname");
-      //       added = resultn[0].Value + " : " + ips[1] + "\n"
-      //       node2 = Object.values(resultn[0])
-      //       ip2 = ips[1]
-      //       // res.render("dashboard" , {node2 : resultn[0].Value})
-
-
-
-
-
-
-// connecting to node3 to find its logical  node-name
-      // Create a connection pool
-    //       const poolo = mariadb.createPool({
-    //         host: ips[2],
-    //         user: 'praveen',
-    //         password: 'password',
-    //         port: 3306, 
-    //       });
-
-
-
-    //  // Expose a method to establish connection with MariaDB SkySQL
-    //         module.exports = Object.freeze({
-    //           poolo: poolo
-    //         });
-
-
-    //   // finding node name of the 3rd node
-    //         const resulto = await poolo.query("select @@hostname");
-    //         added = resulto[0].Value + " : " + ips[2] + "\n"
-    //         node3 = Object.values(resulto[0])
-    //         ip3 = ips[2]
-    //         // res.render("dashboard" , {node3 : resulto[0].Value})
-
-
 
 
 
@@ -238,34 +212,7 @@ app.post('/', async (req, res) => {
 
         slave_count = brek1.length;
 
-  // creating connection with the 1st async slave of the cluster
-  //       const pool3 = mariadb.createPool({
-  //           host: brek1[0],
-  //           user: 'praveen',
-  //           password: 'password',
-  //           port: 3306, 
-  //       });
-    
-    
-  //       module.exports = Object.freeze({
-  //           pool3: pool3
-  //       });
-
-
-  // // finding the slave status, and extracting how many seconds is it behind master
-  //       const result4 = await pool3.query("show slave status");
-
-
-  //       added = `The slave is behind the master by ${result4[0].Seconds_Behind_Master} seconds (null means slave or master is not running)` + "\n"
-  //       lag = result4[0].Seconds_Behind_Master
-
-  //       if( lag == null) {
-  //         lag = "null"
-  //       }
-
-
-
-  //  trying to implement taking multiple slaves... by connecting to each slave in a loop...
+  //  taking multiple slaves... by connecting to each slave in a loop...
         var seconds_behind = []
         seconds_behind.length = slave_count
         var i = 0
@@ -314,7 +261,7 @@ app.post('/', async (req, res) => {
           
   //  just to check if all is right
         console.log(split_ip)
-        // console.log(resultm, node3)
+        console.log(all_nodes)
         // console.log(result4[0].Seconds_Behind_Master)
         
         }
@@ -343,7 +290,7 @@ app.post('/', async (req, res) => {
     res.sendFile(__dirname + "/index.html")
     
     // res.end();
-      // throw err;
+      throw err;
   }
 
 
