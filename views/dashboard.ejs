@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galera overview</title>
+    <style>
+        .surround{
+            margin: 100px auto ;
+        }
+
+        table, th, td {
+             border: 0;
+        }
+
+        table {
+            width: 60%;
+            text-align: center;
+            margin: auto;
+        }
+
+        th {
+            height: 40px;
+            background-color: #04AA6D;
+            color: whitesmoke;
+            margin: 0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        td {
+            height: 32px;
+            vertical-align: center;
+            margin: 0;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="surround">
+
+      <table>
+        <tr>
+            <th>Cluster-name</th>
+            <th>Nodes in Cluster</th>
+            <th>Slaves of Cluster</th>
+            <th>replication lag</th>
+        </tr>
+        <tr>
+            <td></td>
+            <td><%= node1   %></td>
+            <td><%= slaves %></td>
+            <td><%= lag %></td>
+        </tr>
+        <tr>
+            <td><%= cluster  %></td>
+            <td><%= node2   %></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><%= node3   %></td>
+            <td></td>
+            <td></td>
+        </tr>
+      </table>
+
+    </div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
